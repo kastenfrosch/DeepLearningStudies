@@ -57,7 +57,8 @@ def model_fn():
 
     # Adding dense layers with softmax activation
     model.add(layers.Flatten())
-    model.add(layers.Dense(128, activation='relu'))
+    model.add(layers.Dense(256, activation='relu'))
+    model.add(layers.Dense(512, activation='relu'))
     model.add(layers.Dense(10, activation='softmax'))
 
     model.compile(optimizer='adam',
@@ -73,7 +74,7 @@ def model_fn():
 def start(epochs):
 
     # Importing dataset
-    train_images, train_labels, test_images, test_labels = create_dataset(verify=True)
+    train_images, train_labels, test_images, test_labels = create_dataset(verify=False)
 
     # Create model
     model = model_fn()
@@ -109,8 +110,11 @@ def start(epochs):
 
     print(test_acc)
 
+    # TODO: train with estimator um fortschritt zum speichern, checkpoints etc
+    # https://www.tensorflow.org/tutorials/estimator/premade?hl=de
+
 
 if __name__ == '__main__':
-    start(5)
+    start(25)
 
 
