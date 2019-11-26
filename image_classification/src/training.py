@@ -1,10 +1,8 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-import tensorflow as tf
-
-from tensorflow.keras import datasets, layers, models
+from tensorflow.keras import datasets, layers, models, regularizers
 import matplotlib.pyplot as plt
-import numpy as np
+from model import model_fn
 
 
 def create_dataset(verify):
@@ -27,7 +25,7 @@ def verify_data(train_images, train_labels):
     class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer',
                    'dog', 'frog', 'horse', 'ship', 'truck']
 
-    plt.figure(figsize=(10,10))
+    plt.figure(figsize=(10, 10))
     for i in range(25):
         plt.subplot(5, 5, i+1)
         plt.xticks([])
@@ -36,39 +34,6 @@ def verify_data(train_images, train_labels):
         plt.imshow(train_images[i], cmap=plt.cm.binary)
         plt.xlabel(class_names[train_labels[i][0]])
     plt.show()
-
-
-def model_fn():
-
-    # Create CNN model
-    model = models.Sequential()
-
-    # Convolutional Layers
-    # First conv layer requires an input shape
-    model.add(layers.Conv2D(32, (3, 3), activation='relu', input_shape=(32, 32, 3)))
-    model.add(layers.MaxPooling2D((2, 2)))
-    model.add(layers.Dropout(0.3))
-    model.add(layers.Conv2D(64, (3, 3), activation='relu'))
-    model.add(layers.MaxPooling2D((2, 2)))
-    model.add(layers.Dropout(0.3))
-    model.add(layers.Conv2D(128, (3, 3), activation='relu'))
-    model.add(layers.MaxPooling2D((2, 2)))
-    model.add(layers.Dropout(0.3))
-
-    # Adding dense layers with softmax activation
-    model.add(layers.Flatten())
-    model.add(layers.Dense(256, activation='relu'))
-    model.add(layers.Dense(512, activation='relu'))
-    model.add(layers.Dense(10, activation='softmax'))
-
-    model.compile(optimizer='adam',
-                  loss='sparse_categorical_crossentropy',
-                  metrics=['accuracy'])
-
-    # Output model summary
-    model.summary()
-
-    return model
 
 
 def start(epochs):
@@ -80,7 +45,9 @@ def start(epochs):
     model = model_fn()
 
     # Training the model
-    history = model.fit(train_images, train_labels, epochs=epochs,
+    history = model.fit(x=train_images, y=train_labels,
+                        batch_size=16,
+                        epochs=epochs,
                         validation_data=(test_images, test_labels))
 
     acc = history.history['accuracy']
@@ -112,9 +79,22 @@ def start(epochs):
 
     # TODO: train with estimator um fortschritt zum speichern, checkpoints etc
     # https://www.tensorflow.org/tutorials/estimator/premade?hl=de
+    # https://developers.googleblog.com/2017/12/creating-custom-estimators-in-tensorflow.html
+    # https://towardsdatascience.com/how-to-use-dataset-in-tensorflow-c758ef9e4428
+
+    # cifar >90%!
+    # learning rate decay!
+    # data augmentation: https://appliedmachinelearning.blog/2018/03/24/achieving-90-accuracy-in-object-recognition-task-on-cifar-10-dataset-with-keras-convolutional-neural-networks/
+
+    # nlp, ocr oder sowas
+
+    # TODO: MAZE SOLVER?
+    # https://www.youtube.com/watch?v=rop0W4QDOUI
+
+    # DRL?
 
 
 if __name__ == '__main__':
-    start(25)
+    start(epochs=25)
 
 
