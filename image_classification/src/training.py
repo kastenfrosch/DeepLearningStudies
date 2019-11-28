@@ -1,55 +1,15 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
-from tensorflow.keras import datasets, layers, models, regularizers
+import tensorflow as tf
+from tensorflow.keras import layers, models, regularizers
+
 import matplotlib.pyplot as plt
 from model import model_fn
 from config import config
+import dataset
 
 
-def create_dataset(verify):
-
-    # Download cifar10 dataset
-    (train_images, train_labels), (test_images, test_labels) = datasets.cifar10.load_data()
-
-    # Normalize pixel values to be between 0 and 1
-    train_images, test_images = train_images / 255.0, test_images / 255.0
-
-    # Verify and show the imported data if needed
-    if verify:
-        verify_data(train_images, train_labels)
-
-    return train_images, train_labels, test_images, test_labels
-
-
-def verify_data(train_images, train_labels):
-
-    class_names = ['airplane', 'automobile', 'bird', 'cat', 'deer',
-                   'dog', 'frog', 'horse', 'ship', 'truck']
-
-    plt.figure(figsize=(10, 10))
-    for i in range(25):
-        plt.subplot(5, 5, i+1)
-        plt.xticks([])
-        plt.yticks([])
-        plt.grid(False)
-        plt.imshow(train_images[i], cmap=plt.cm.binary)
-        plt.xlabel(class_names[train_labels[i][0]])
-    plt.show()
-
-
-def start():
-
-    # Importing dataset
-    train_images, train_labels, test_images, test_labels = create_dataset(verify=False)
-
-    # Create model
-    model = model_fn()
-
-    # Training the model
-    history = model.fit(x=train_images, y=train_labels,
-                        batch_size=config.batch_size,
-                        epochs=config.epochs,
-                        validation_data=(test_images, test_labels))
+def plot_history(history):
 
     acc = history.history['accuracy']
     val_acc = history.history['val_accuracy']
@@ -74,14 +34,52 @@ def start():
 
     plt.show()
 
-    test_loss, test_acc = model.evaluate(test_images, test_labels, verbose=2)
 
-    print(test_acc)
+def input_fn(inputs):
+
+    images, labels = inputs
+    ds = tf.data.Dataset.from_tensor_slices((images, labels))
+    ds = ds.batch(config.batch_size, drop_remainder=True).repeat()
+
+    return ds
+
+
+def start():
+
+    # Importing dataset
+    train, test = dataset.create_dataset(verify=True)
+
+    # Creating the model
+    model = model_fn()
+
+    # Create estimator from model
+    cifar_estimator = tf.keras.estimator.model_to_estimator(
+        keras_model=model,
+        model_dir=config.model_dir
+    )
+
+    # Train and evaluate the estimator
+    print("\nStarting training...")
+    cifar_estimator.train(input_fn=lambda: input_fn(train),
+                          steps=2)
+
+    print("\nStarting evaluation...")
+    eval_result = cifar_estimator.evaluate(input_fn=lambda: input_fn(test),
+                                           steps=1)
+    print("\nEval result: {}".format(eval_result))
+
+    # Training the model
+    # history = model.fit(x=train_images, y=train_labels,
+    #                     batch_size=config.batch_size,
+    #                     epochs=config.epochs,
+    #                     validation_data=(test_images, test_labels))
+    #
+    # plot_history(history=history)
+    #
+    # test_loss, test_acc = model.evaluate(test_images, test_labels, verbose=2)
+    # print("\nTest accuracy after {} epochs: {:.2%}".format(config.epochs, test_acc))
 
     # TODO: train with estimator um fortschritt zum speichern, checkpoints etc
-    # https://www.tensorflow.org/tutorials/estimator/premade?hl=de
-    # https://developers.googleblog.com/2017/12/creating-custom-estimators-in-tensorflow.html
-    # https://towardsdatascience.com/how-to-use-dataset-in-tensorflow-c758ef9e4428
 
     # cifar >90%!
     # learning rate decay!

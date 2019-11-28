@@ -11,6 +11,7 @@ class Config:
         self.epochs = config["epochs"]
         self.no_runs = config["no_runs"]
         self.batch_size = config["batch_size"]
+        self.model_dir = config["model_dir"]
 
 
 config = Config(config_path)
