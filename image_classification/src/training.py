@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 from tensorflow.keras import datasets, layers, models, regularizers
 import matplotlib.pyplot as plt
 from model import model_fn
+from config import config
 
 
 def create_dataset(verify):
@@ -36,7 +37,7 @@ def verify_data(train_images, train_labels):
     plt.show()
 
 
-def start(epochs):
+def start():
 
     # Importing dataset
     train_images, train_labels, test_images, test_labels = create_dataset(verify=False)
@@ -46,8 +47,8 @@ def start(epochs):
 
     # Training the model
     history = model.fit(x=train_images, y=train_labels,
-                        batch_size=16,
-                        epochs=epochs,
+                        batch_size=config.batch_size,
+                        epochs=config.epochs,
                         validation_data=(test_images, test_labels))
 
     acc = history.history['accuracy']
@@ -56,9 +57,9 @@ def start(epochs):
     loss = history.history['loss']
     val_loss = history.history['val_loss']
 
-    epochs_range = range(epochs)
+    epochs_range = range(config.epochs)
 
-    plt.figure(figsize=(8, 8))
+    plt.figure(figsize=(16, 8))
     plt.subplot(1, 2, 1)
     plt.plot(epochs_range, acc, label='Training Accuracy')
     plt.plot(epochs_range, val_acc, label='Validation Accuracy')
@@ -95,6 +96,6 @@ def start(epochs):
 
 
 if __name__ == '__main__':
-    start(epochs=25)
+    start()
 
 
