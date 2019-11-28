@@ -47,7 +47,7 @@ def input_fn(inputs):
 def start():
 
     # Importing dataset
-    train, test = dataset.create_dataset(verify=True)
+    train, test = dataset.create_dataset(verify=False)
 
     # Creating the model
     model = model_fn()
@@ -60,12 +60,10 @@ def start():
 
     # Train and evaluate the estimator
     print("\nStarting training...")
-    cifar_estimator.train(input_fn=lambda: input_fn(train),
-                          steps=2)
+    cifar_estimator.train(input_fn=lambda: input_fn(train), steps=2)
 
     print("\nStarting evaluation...")
-    eval_result = cifar_estimator.evaluate(input_fn=lambda: input_fn(test),
-                                           steps=1)
+    eval_result = cifar_estimator.evaluate(lambda: input_fn(test), steps=2)
     print("\nEval result: {}".format(eval_result))
 
     # Training the model
