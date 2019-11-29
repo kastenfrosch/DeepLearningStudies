@@ -1,6 +1,6 @@
 {
-  "epochs": 2,
-  "no_runs": 2,
+  "epochs": 15,
+  "no_runs": 5,
   "batch_size": 16,
   "model_dir": "..\\model_files"
 }

@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division, print_function, unicode_literals
 
 import tensorflow as tf
+import tensorflow_datasets as tfds
 from tensorflow.keras import layers, models, regularizers
 
 import matplotlib.pyplot as plt
@@ -39,7 +40,22 @@ def input_fn(inputs):
 
     images, labels = inputs
     ds = tf.data.Dataset.from_tensor_slices((images, labels))
-    ds = ds.batch(config.batch_size, drop_remainder=True).repeat()
+    ds = ds.batch(config.batch_size).repeat()
+
+    return ds
+
+
+def input_fn_2(train: bool):
+
+    if train:
+        split = tfds.Split.TRAIN
+    else:
+        split = tfds.Split.TEST
+
+    ds = tfds.load('cifar10', split=split, as_supervised=True)
+
+    ds = ds.map(lambda features, labels: ({'conv2d_input': features/255}, labels))
+    ds = ds.batch(config.batch_size).repeat()
 
     return ds
 
@@ -58,13 +74,15 @@ def start():
         model_dir=config.model_dir
     )
 
-    # Train and evaluate the estimator
-    print("\nStarting training...")
-    cifar_estimator.train(input_fn=lambda: input_fn(train), steps=2)
+    for x in range(config.no_runs):
+        for y in range(config.epochs):
+            # Train and evaluate the estimator
+            print("\nStarting training run ({} of {}).".format(y+1, config.epochs))
+            cifar_estimator.train(input_fn=lambda: input_fn_2(True), steps=int(50000/config.batch_size))
 
-    print("\nStarting evaluation...")
-    eval_result = cifar_estimator.evaluate(lambda: input_fn(test), steps=2)
-    print("\nEval result: {}".format(eval_result))
+        print("\nStarting evaluation ({}/{})".format(x+1, config.no_runs))
+        eval_result = cifar_estimator.evaluate(input_fn=lambda: input_fn_2(False), steps=int(10000/config.batch_size))
+        print("\nEval result after {}: {}".format(x+1, eval_result))
 
     # Training the model
     # history = model.fit(x=train_images, y=train_labels,

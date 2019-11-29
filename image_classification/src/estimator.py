@@ -26,12 +26,6 @@ def input_fn():
     return dataset
 
 
-for features_batch, labels_batch in input_fn().take(1):
-    pass
-    #print(features_batch)
-    #print(labels_batch)
-
-
 model_dir = "/tmp/tfkeras_example/"
 keras_estimator = tf.keras.estimator.model_to_estimator(
     keras_model=model, model_dir=model_dir)
