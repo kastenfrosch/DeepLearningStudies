@@ -2,38 +2,19 @@ from __future__ import absolute_import, division, print_function, unicode_litera
 
 import tensorflow as tf
 import tensorflow_datasets as tfds
-from tensorflow.keras import layers, models, regularizers
 
-import matplotlib.pyplot as plt
+import logging
+import random as rd
 from model import model_fn
 from config import config
 import dataset
 
 
-def plot_history(history):
+def start():
 
-    acc = history.history['accuracy']
-    val_acc = history.history['val_accuracy']
-
-    loss = history.history['loss']
-    val_loss = history.history['val_loss']
-
-    epochs_range = range(config.epochs)
-
-    plt.figure(figsize=(16, 8))
-    plt.subplot(1, 2, 1)
-    plt.plot(epochs_range, acc, label='Training Accuracy')
-    plt.plot(epochs_range, val_acc, label='Validation Accuracy')
-    plt.legend(loc='lower right')
-    plt.title('Training and Validation Accuracy')
-
-    plt.subplot(1, 2, 2)
-    plt.plot(epochs_range, loss, label='Training Loss')
-    plt.plot(epochs_range, val_loss, label='Validation Loss')
-    plt.legend(loc='upper right')
-    plt.title('Training and Validation Loss')
-
-    plt.show()
+    logging.getLogger("tensorflow").setLevel(logging.INFO)
+    rd.seed()
+    start_training()
 
 
 def input_fn(inputs):
@@ -55,12 +36,12 @@ def input_fn_2(train: bool):
     ds = tfds.load('cifar10', split=split, as_supervised=True)
 
     ds = ds.map(lambda features, labels: ({'conv2d_input': features/255}, labels))
-    ds = ds.batch(config.batch_size).repeat()
+    ds = ds.batch(config.batch_size).repeat(config.epochs)
 
     return ds
 
 
-def start():
+def start_training():
 
     # Importing dataset
     train, test = dataset.create_dataset(verify=False)
@@ -68,20 +49,28 @@ def start():
     # Creating the model
     model = model_fn()
 
+    # Set memory growth for gpu:
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        try:
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+        except RuntimeError as e:
+            print(e)
+
     # Create estimator from model
     cifar_estimator = tf.keras.estimator.model_to_estimator(
         keras_model=model,
         model_dir=config.model_dir
     )
 
+    # Train and evaluate the estimator
     for x in range(config.no_runs):
-        for y in range(config.epochs):
-            # Train and evaluate the estimator
-            print("\nStarting training run ({} of {}).".format(y+1, config.epochs))
-            cifar_estimator.train(input_fn=lambda: input_fn_2(True), steps=int(50000/config.batch_size))
+        print("\nStarting training run ({} of {}).".format(x+1, config.epochs))
+        cifar_estimator.train(input_fn=lambda: input_fn_2(True), steps=None)
 
         print("\nStarting evaluation ({}/{})".format(x+1, config.no_runs))
-        eval_result = cifar_estimator.evaluate(input_fn=lambda: input_fn_2(False), steps=int(10000/config.batch_size))
+        eval_result = cifar_estimator.evaluate(input_fn=lambda: input_fn_2(False), steps=None)
         print("\nEval result after {}: {}".format(x+1, eval_result))
 
     # Training the model
